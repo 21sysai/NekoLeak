@@ -1,105 +1,120 @@
 
-import { Security } from '../utils/security';
+import { IncomingMessage, ServerResponse } from 'http';
+import https from 'https';
 
+// --- SECURITY PROTOCOL v3.7 (SYNCED) ---
+const SESSION_WINDOW = 75;
+const EPOCH = new Date('2024-01-01T00:00:00Z').getTime();
+
+const SecurityCore = {
+  calculateChecksum: (base: string): string => {
+    const sum = base.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return (sum % 36).toString(36).toUpperCase();
+  },
+  generateSecureKey: (): string => {
+    const cryptoChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let salt = '';
+    for (let i = 0; i < 3; i++) {
+      salt += cryptoChars.charAt(Math.floor(Math.random() * cryptoChars.length));
+    }
+    const minutes = Math.floor((Date.now() - EPOCH) / 60000);
+    const timeCode = (minutes % 1296).toString(36).toUpperCase().padStart(2, '0');
+    const base = salt + timeCode;
+    const checksum = SecurityCore.calculateChecksum(base);
+    return `NX-${base}${checksum}`;
+  }
+};
+
+// --- TELEGRAM SENDER (NATIVE HTTPS) ---
+function sendTelegramMessage(token: string, chatId: number, text: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({
+      chat_id: chatId,
+      text: text,
+      parse_mode: 'HTML'
+    });
+
+    const options = {
+      hostname: 'api.telegram.org',
+      port: 443,
+      path: `/bot${token}/sendMessage`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': data.length
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let responseBody = '';
+      res.on('data', (chunk) => responseBody += chunk);
+      res.on('end', () => resolve(JSON.parse(responseBody)));
+    });
+
+    req.on('error', (error) => reject(error));
+    req.write(data);
+    req.end();
+  });
+}
+
+// --- MAIN HANDLER ---
 export default async function handler(req: any, res: any) {
-  // Always log the start of a request for debugging in Vercel logs
-  console.log(`[Webhook] Incoming ${req.method} request`);
+  const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 
-  const token = process.env.TELEGRAM_TOKEN;
-
-  // 1. Handle non-POST requests (Health checks / Diagnostics)
+  // 1. Diagnostics (GET Request)
   if (req.method !== 'POST') {
     return res.status(200).json({
-      status: 'Nexus Node Active',
-      protocol: Security.VERSION,
-      configured: !!token,
-      timestamp: new Date().toISOString()
+      status: "ONLINE",
+      node: "NEKOLEAK-NEXUS-3.7",
+      diagnostics: {
+        token_present: !!TELEGRAM_TOKEN,
+        token_length: TELEGRAM_TOKEN ? TELEGRAM_TOKEN.length : 0,
+        // Fix: Use type assertion to access Node version in restricted environments
+        env_node_version: (process as any).version || 'unknown'
+      }
     });
   }
 
-  // 2. Main Logic with Global Protection
   try {
-    if (!token) {
-      console.error('[Critical] TELEGRAM_TOKEN is missing');
-      return res.status(200).send('Config Missing');
-    }
-
-    // Vercel usually parses req.body automatically if it's application/json
     const body = req.body;
-    
-    if (!body || (!body.message && !body.callback_query)) {
-      console.warn('[Webhook] No valid message/callback detected');
-      return res.status(200).send('No data');
+    if (!body || !body.message) {
+      return res.status(200).send('No payload');
     }
 
-    const message = body.message || body.callback_query?.message;
-    const chatId = message?.chat?.id;
-    const text = (body.message?.text || '').toLowerCase();
+    const chatId = body.message.chat.id;
+    const text = (body.message.text || '').toLowerCase();
 
-    if (!chatId) {
-      return res.status(200).send('No chat ID');
+    if (!TELEGRAM_TOKEN) {
+      console.error('CRITICAL: TELEGRAM_TOKEN is missing');
+      return res.status(200).send('Config error');
     }
 
-    // Ping check
+    // Command: /ping
     if (text === '/ping') {
-      await sendTelegram(chatId, `<b>PONG!</b>\nNode: <code>${Security.VERSION}</code>\nStatus: 🟢 Clear`, token);
+      await sendTelegramMessage(TELEGRAM_TOKEN, chatId, '<b>PONG!</b>\nNexus Node v3.7 Operational.');
       return res.status(200).send('OK');
     }
 
-    // Start / Key logic
+    // Command: /start or key
     if (text.includes('/start') || text.includes('key') || text.includes('kunci')) {
-      const accessKey = Security.generateSecureKey();
-      const responseText = `
-<b>🐱 NEKOLEAK NEXUS v3.6</b>
+      const key = SecurityCore.generateSecureKey();
+      const msg = `
+<b>🐱 NEKOLEAK ACCESS GRANTED</b>
 
-<b>Access Key:</b> <code>${accessKey}</code>
-<b>Berlaku:</b> 75 Menit
-<b>Protocol:</b> ${Security.VERSION}
+<b>Access Key:</b> <code>${key}</code>
+<b>Validity:</b> 75 Minutes
+<b>Protocol:</b> v3.7-NATIVE
 
-<i>Gunakan key di atas untuk menginisialisasi terminal login.</i>
-
-<b>Diagnostic Info:</b>
-Node: Quantum-Sync
-Region: Global
+<i>Gunakan key di atas untuk masuk ke database.</i>
       `.trim();
-
-      await sendTelegram(chatId, responseText, token);
+      
+      await sendTelegramMessage(TELEGRAM_TOKEN, chatId, msg);
     }
 
     return res.status(200).send('OK');
   } catch (error: any) {
-    // CRITICAL: We catch EVERYTHING and still return 200.
-    // This prevents Vercel 500 errors from triggering Telegram's retry policy
-    // which usually leads to "Function Invocation Failed" due to rate limiting/cascading failures.
-    console.error('[Webhook Crash]', error.message);
-    return res.status(200).json({ 
-      error: true, 
-      message: 'Internal processing error handled' 
-    });
-  }
-}
-
-/**
- * Robust Telegram Sender
- */
-async function sendTelegram(chatId: number, text: string, token: string) {
-  try {
-    const url = `https://api.telegram.org/bot${token}/sendMessage`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: text,
-        parse_mode: 'HTML'
-      }),
-    });
-
-    if (!response.ok) {
-      const details = await response.text();
-      console.error('[Telegram API Error]', details);
-    }
-  } catch (e: any) {
-    console.error('[Fetch Error]', e.message);
+    console.error('WEBHOOK_CRASH:', error.message);
+    // Selalu kirim 200 agar Telegram berhenti mencoba ulang request yang error
+    return res.status(200).json({ status: "error_handled", detail: error.message });
   }
 }
