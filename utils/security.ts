@@ -1,13 +1,13 @@
 
 /**
- * NEKOLEAK Nexus-6 Security Protocol (v3.7)
+ * NEKOLEAK Nexus-6 Security Protocol (v3.8)
  */
 
-const SESSION_WINDOW = 75; 
+const SESSION_WINDOW = 10; // Strictly 10 minutes
 const EPOCH = new Date('2024-01-01T00:00:00Z').getTime();
 
 export const Security = {
-  VERSION: 'v3.7-NATIVE',
+  VERSION: 'v3.8-NATIVE',
 
   calculateChecksum: (base: string): string => {
     const sum = base.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);

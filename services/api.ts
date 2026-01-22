@@ -1,7 +1,6 @@
 
 import { AnimeLatestItem, AnimeReleaseItem, AnimeSearchItem, AnimeDetail } from '../types';
 
-// Sekarang murni mengambil dari environment, tanpa ada string URL di dalam kode
  const BASE_PROXY_URL = process.env.BASE_PROXY_URL;
 
 class ApiService {

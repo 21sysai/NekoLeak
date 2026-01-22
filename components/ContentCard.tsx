@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, PlayCircle } from 'lucide-react';
+import { Clock, PlayCircle, Zap } from 'lucide-react';
 
 interface Props {
   title: string;
@@ -22,7 +22,7 @@ export const ContentCard: React.FC<Props> = ({ title, image, subtitle, genres, d
   return (
     <div 
       onClick={onClick}
-      className="group relative flex flex-col bg-[#0a0a0b] border border-white/5 rounded-xl overflow-hidden cursor-pointer transition-all duration-500 hover:border-red-600/50 hover:shadow-[0_10px_30px_-10px_rgba(220,38,38,0.3)]"
+      className="group relative flex flex-col bg-[#0a0a0b] border border-white/5 rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 hover:border-red-600/40 hover:shadow-[0_20px_40px_-15px_rgba(239,68,68,0.2)] transform hover:-translate-y-1"
     >
       <div className="aspect-video overflow-hidden relative bg-zinc-900/50">
         <img 
@@ -31,38 +31,48 @@ export const ContentCard: React.FC<Props> = ({ title, image, subtitle, genres, d
           referrerPolicy="no-referrer"
           onError={handleImageError}
           loading="lazy"
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+          className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-[1.5s] ease-out"
         />
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-            <PlayCircle className="w-10 h-10 text-white/90 drop-shadow-lg scale-90 group-hover:scale-100 transition-transform" />
+        
+        {/* Play Overlay */}
+        <div className="absolute inset-0 bg-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center backdrop-blur-[2px]">
+            <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 scale-75 group-hover:scale-100 transition-transform duration-500 shadow-2xl">
+              <PlayCircle className="w-8 h-8 text-white fill-white/20" />
+            </div>
         </div>
 
-        <div className="absolute top-2 right-2 z-10 max-w-[80%]">
+        {/* Badge */}
+        <div className="absolute top-3 right-3 z-10">
           {duration && (
-            <div className="bg-black/90 backdrop-blur-md px-2 py-1 rounded text-[7px] md:text-[8px] font-black flex items-center gap-1.5 border border-white/10 shadow-xl">
-              <Clock className="w-2.5 h-2.5 text-red-500 flex-shrink-0" />
-              <span className="uppercase tracking-tighter truncate">{duration}</span>
+            <div className="bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[8px] font-black flex items-center gap-2 border border-white/10 shadow-2xl">
+              <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />
+              <span className="uppercase tracking-widest text-zinc-100">{duration}</span>
             </div>
           )}
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0a0a0b] to-transparent opacity-90" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/40 to-transparent opacity-90" />
       </div>
 
-      <div className="p-3 space-y-2 flex-grow flex flex-col bg-[#0a0a0b] z-20">
-        <h3 className="font-bold text-[11px] md:text-[12px] line-clamp-2 leading-tight group-hover:text-red-500 transition-colors uppercase tracking-tight h-8">
+      <div className="p-4 space-y-3 flex-grow flex flex-col bg-[#0a0a0b] z-20">
+        <h3 className="font-extrabold text-[12px] md:text-[13px] line-clamp-2 leading-tight group-hover:text-red-500 transition-colors uppercase tracking-tight h-10">
           {title}
         </h3>
         
-        {genres && genres.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-auto h-4 overflow-hidden">
-            {genres.map((g, i) => (
-              <span key={i} className="text-[6px] bg-zinc-900 border border-white/10 px-1 py-0.5 rounded text-zinc-500 font-bold uppercase tracking-tighter whitespace-nowrap">
-                {g.trim()}
-              </span>
-            ))}
+        <div className="flex items-center justify-between mt-auto">
+          <div className="flex flex-wrap gap-1.5 h-4 overflow-hidden">
+            {genres && genres.length > 0 ? (
+              genres.slice(0, 2).map((g, i) => (
+                <span key={i} className="text-[7px] bg-white/5 border border-white/5 px-2 py-0.5 rounded-md text-zinc-500 font-black uppercase tracking-widest whitespace-nowrap">
+                  {g.trim()}
+                </span>
+              ))
+            ) : (
+              <span className="text-[7px] text-zinc-700 font-black uppercase tracking-widest">Global Archive</span>
+            )}
           </div>
-        )}
+          <Zap className="w-3 h-3 text-zinc-800 group-hover:text-red-600 transition-colors" />
+        </div>
       </div>
     </div>
   );

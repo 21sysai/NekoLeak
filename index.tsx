@@ -1,8 +1,3 @@
-// ========================================
-// FILE: index.tsx (UPDATED)
-// Location: Root directory
-// Changes: Added AdBlocker initialization
-// ========================================
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -14,10 +9,6 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// ========================================
-// Initialize Ad Blocker (Line 15-17)
-// Activate network request interception and CSS injection
-// ========================================
 AdBlocker.initialize();
 AdBlocker.injectCSS();
 

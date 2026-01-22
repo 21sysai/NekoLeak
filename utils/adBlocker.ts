@@ -1,10 +1,4 @@
 
-// ========================================
-// FILE: utils/adBlocker.ts
-// Ad blocking utility with robust network request interception
-// Compatible with Vercel and restrictive browser environments
-// ========================================
-
 const AD_DOMAINS = [
   'doubleclick.net',
   'googlesyndication.com',

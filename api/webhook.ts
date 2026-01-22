@@ -2,8 +2,8 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import https from 'https';
 
-// --- SECURITY PROTOCOL v3.7 (SYNCED) ---
-const SESSION_WINDOW = 75;
+// --- SECURITY PROTOCOL v3.8 (SYNCED) ---
+const SESSION_WINDOW = 10; // Expire in 10 minutes
 const EPOCH = new Date('2024-01-01T00:00:00Z').getTime();
 
 const SecurityCore = {
@@ -28,11 +28,14 @@ const SecurityCore = {
 // --- TELEGRAM SENDER (NATIVE HTTPS) ---
 function sendTelegramMessage(token: string, chatId: number, text: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    const data = JSON.stringify({
+    const payload = {
       chat_id: chatId,
       text: text,
-      parse_mode: 'HTML'
-    });
+      parse_mode: 'HTML',
+      disable_web_page_preview: true
+    };
+
+    const data = JSON.stringify(payload);
 
     const options = {
       hostname: 'api.telegram.org',
@@ -41,7 +44,7 @@ function sendTelegramMessage(token: string, chatId: number, text: string): Promi
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': data.length
+        'Content-Length': Buffer.byteLength(data)
       }
     };
 
@@ -61,16 +64,13 @@ function sendTelegramMessage(token: string, chatId: number, text: string): Promi
 export default async function handler(req: any, res: any) {
   const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 
-  // 1. Diagnostics (GET Request)
   if (req.method !== 'POST') {
     return res.status(200).json({
       status: "ONLINE",
-      node: "NEKOLEAK-NEXUS-3.7",
+      node: "NEKOLEAK-NEXUS-3.8",
       diagnostics: {
         token_present: !!TELEGRAM_TOKEN,
-        token_length: TELEGRAM_TOKEN ? TELEGRAM_TOKEN.length : 0,
-        // Fix: Use type assertion to access Node version in restricted environments
-        env_node_version: (process as any).version || 'unknown'
+        node_version: (process as any).version
       }
     });
   }
@@ -82,30 +82,31 @@ export default async function handler(req: any, res: any) {
     }
 
     const chatId = body.message.chat.id;
-    const text = (body.message.text || '').toLowerCase();
+    const incomingText = (body.message.text || '').toLowerCase();
 
     if (!TELEGRAM_TOKEN) {
-      console.error('CRITICAL: TELEGRAM_TOKEN is missing');
       return res.status(200).send('Config error');
     }
 
-    // Command: /ping
-    if (text === '/ping') {
-      await sendTelegramMessage(TELEGRAM_TOKEN, chatId, '<b>PONG!</b>\nNexus Node v3.7 Operational.');
+    if (incomingText === '/ping') {
+      await sendTelegramMessage(TELEGRAM_TOKEN, chatId, '<b>PONG!</b>\nNexus Node v3.8 Operational.');
       return res.status(200).send('OK');
     }
 
-    // Command: /start or key
-    if (text.includes('/start') || text.includes('key') || text.includes('kunci')) {
+    if (incomingText.includes('/start') || incomingText.includes('key') || incomingText.includes('kunci') || incomingText.includes('akses')) {
       const key = SecurityCore.generateSecureKey();
       const msg = `
+<b>━━━━━━━━━━━━━━━</b>
 <b>🐱 NEKOLEAK ACCESS GRANTED</b>
+<b>━━━━━━━━━━━━━━━</b>
 
-<b>Access Key:</b> <code>${key}</code>
-<b>Validity:</b> 75 Minutes
-<b>Protocol:</b> v3.7-NATIVE
+<b>🔑 ACCESS KEY:</b>
+<code>${key}</code>
 
-<i>Gunakan key di atas untuk masuk ke database.</i>
+<b>⏳ VALIDITY:</b> 10 MINUTES
+<b>🌐 PROTOCOL:</b> v3.8-NATIVE
+
+<i>Click the key above to copy it automatically. This key will expire in 10 minutes. Enter it into the terminal to synchronize.</i>
       `.trim();
       
       await sendTelegramMessage(TELEGRAM_TOKEN, chatId, msg);
@@ -114,7 +115,6 @@ export default async function handler(req: any, res: any) {
     return res.status(200).send('OK');
   } catch (error: any) {
     console.error('WEBHOOK_CRASH:', error.message);
-    // Selalu kirim 200 agar Telegram berhenti mencoba ulang request yang error
     return res.status(200).json({ status: "error_handled", detail: error.message });
   }
 }

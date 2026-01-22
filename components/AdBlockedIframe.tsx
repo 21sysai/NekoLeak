@@ -1,7 +1,3 @@
-// ========================================
-// FILE BARU: components/AdBlockedIframe.tsx
-// Komponen wrapper iframe dengan ad-blocking untuk Vercel deployment
-// ========================================
 
 import React, { useEffect, useRef } from 'react';
 
