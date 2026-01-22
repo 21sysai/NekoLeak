@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { AlertCircle, Loader2, Zap, Send } from 'lucide-react';
+import { Security } from '../utils/security';
 
 interface AuthViewProps {
   accessKey: string;
@@ -34,7 +35,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
               NEKO<span className="text-red-600">LEAK</span>
             </h1>
             <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.5em] opacity-80">
-              Nexus Force-Sync v3.2
+              Nexus Quantum-Sync {Security.VERSION}
             </p>
           </div>
         </div>

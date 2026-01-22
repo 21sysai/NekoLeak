@@ -1,8 +1,8 @@
 
 /**
- * NEKOLEAK Nexus-6 Security Protocol (v3.2)
- * Architecture: Force-Sync Atomic Sum
- * Version: 2026.03.13-FORCE
+ * NEKOLEAK Nexus-6 Security Protocol (v3.5)
+ * Architecture: Quantum-Sync Atomic Sum
+ * Version: 2026.03.14-QUANTUM
  */
 
 const SESSION_WINDOW = 75; 
@@ -12,7 +12,7 @@ export const Security = {
   /**
    * Versi Protokol untuk Verifikasi
    */
-  VERSION: 'v3.2-FORCE',
+  VERSION: 'v3.5-QUANTUM',
 
   calculateChecksum: (base: string): string => {
     const sum = base.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -32,7 +32,7 @@ export const Security = {
     const base = salt + timeCode;
     const checksum = Security.calculateChecksum(base);
 
-    // TOTAL OVERRIDE: Prefix NK- sudah tidak ada di seluruh file ini.
+    // KUNCI MATI: Hanya NX- yang diperbolehkan keluar dari sistem ini.
     return `NX-${base}${checksum}`;
   },
 
@@ -42,12 +42,12 @@ export const Security = {
     if (!k.startsWith('NX-')) {
       return { 
         isValid: false, 
-        reason: k.startsWith('NK-') ? 'STALE PROTOCOL (NK IS OBSOLETE)' : 'INVALID PREFIX' 
+        reason: k.startsWith('NK-') ? 'PROTOCOL OUTDATED (EXPECTING NX-)' : 'TERMINAL ID INVALID' 
       };
     }
 
     if (k.length !== 9) {
-      return { isValid: false, reason: 'INVALID LENGTH' };
+      return { isValid: false, reason: 'PAYLOAD LENGTH MISMATCH' };
     }
 
     const body = k.substring(3);
@@ -56,7 +56,7 @@ export const Security = {
     
     const expectedCheck = Security.calculateChecksum(base);
     if (expectedCheck !== providedCheck) {
-      return { isValid: false, reason: 'INTEGRITY BREACH' };
+      return { isValid: false, reason: 'CHECKSUM CORRUPTION' };
     }
 
     const timePart = base.substring(3);
@@ -67,7 +67,7 @@ export const Security = {
     if (diff < 0) diff += 1296; 
 
     if (diff > SESSION_WINDOW) {
-      return { isValid: false, reason: 'SESSION EXPIRED' };
+      return { isValid: false, reason: 'SESSION TIMED OUT' };
     }
 
     return { isValid: true };

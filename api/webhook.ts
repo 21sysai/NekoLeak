@@ -2,53 +2,78 @@
 import { Security } from '../utils/security';
 
 export default async function handler(req: any, res: any) {
-  const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+  const token = process.env.TELEGRAM_TOKEN;
   
+  // Respon cepat untuk GET (Diagnostik Browser)
   if (req.method !== 'POST') {
     return res.status(200).json({ 
-      status: 'Nexus Bot Active',
+      node: 'NEKOLEAK NEXUS',
+      status: 'OPERATIONAL',
       version: Security.VERSION,
-      info: 'This endpoint must be called via Telegram Webhook'
+      env_check: token ? 'TOKEN_LOADED' : 'TOKEN_MISSING'
     });
   }
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    if (!body?.message) return res.status(200).send('No payload');
+    
+    if (!body || !body.message) {
+      return res.status(200).send('Empty Payload');
+    }
 
     const chatId = body.message.chat.id;
     const text = (body.message.text || '').toLowerCase();
+
+    // Diagnostik Ping
+    if (text === '/ping') {
+      await sendResponse(chatId, `<b>PONG!</b>\nNode: <code>${Security.VERSION}</code>\nStatus: 🟢 Clear`, token);
+      return res.status(200).send('OK');
+    }
 
     if (text.includes('/start') || text.includes('key') || text.includes('kunci')) {
       const accessKey = Security.generateSecureKey();
       
       const responseText = `
-<b>🐱 NEKOLEAK FORCE-SYNC v3.2 🐱</b>
+<b>🐱 NEKOLEAK NEXUS v3.5 🐱</b>
 
 <b>Access Key:</b> <code>${accessKey}</code>
-<b>Validity:</b> 75 Minutes
-<b>Node:</b> ${Security.VERSION}
+<b>Berlaku:</b> 75 Menit
+<b>Protocol:</b> ${Security.VERSION}
 
-<i>Jika Anda masih melihat awalan NK-, berarti Anda belum mengupdate URL Webhook Bot ke project baru ini.</i>
+<i>Jika Anda masih melihat NK-, hubungi admin untuk sinkronisasi webhook ulang.</i>
 
 <b>Diagnostic Info:</b>
-Timestamp: ${new Date().toISOString()}
-Protocol: NX-Hyperlink
+ID: ${chatId}
+Node: Quantum-Sync
       `.trim();
 
-      await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: responseText,
-          parse_mode: 'HTML'
-        }),
-      });
+      await sendResponse(chatId, responseText, token);
     }
 
     return res.status(200).send('OK');
   } catch (error: any) {
-    return res.status(200).json({ error: error.message });
+    console.error('Webhook Failure:', error.message);
+    return res.status(200).json({ error: 'Internal logic crash' });
+  }
+}
+
+async function sendResponse(chatId: number, text: string, token: string | undefined) {
+  if (!token) {
+    console.error('CRITICAL: TELEGRAM_TOKEN IS NOT SET');
+    return;
+  }
+
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        parse_mode: 'HTML'
+      }),
+    });
+  } catch (e) {
+    console.error('Failed to send telegram message', e);
   }
 }
