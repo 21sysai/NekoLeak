@@ -1,124 +1,81 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEKOLEAK</title>
-  <meta name="description" content="Baca komik online | Manhwa - Manga - Manhua" />
-  <link rel="icon" type="image/png" href="/banner2.jpg">
-  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <title>NEKOLEAK | Nexus Ops 2026</title>
+  <meta name="description" content="Premium Anime & Movie Leak Archive - Nexus Ops Center" />
+  <link rel="icon" type="image/png" href="/logo.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary: #ef4444;
+      --bg: #050505;
+    }
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #050505;
+      background-color: var(--bg);
       color: #fafafa;
       overflow-x: hidden;
       user-select: none;
     }
     ::-webkit-scrollbar {
-      width: 4px;
+      width: 6px;
     }
     ::-webkit-scrollbar-track {
       background: #050505;
     }
     ::-webkit-scrollbar-thumb {
-      background: #ef4444;
+      background: #333;
       border-radius: 10px;
+      border: 2px solid #050505;
     }
-    .glass-card {
-      background: rgba(24, 24, 27, 0.4);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
     }
+    
     .text-glow {
-      text-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+      text-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
     }
-    .neon-border {
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
-    }
+    
     @keyframes slide-up {
-      from { transform: translateY(20px); opacity: 0; }
+      from { transform: translateY(30px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
     .animate-slide-up {
-      animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    /* ========================================
-       ANTI-ADS LAYER - CSS Level Blocking
-       Location: index.html > <style> tag
-       ======================================== */
-    
-    /* Block common ad containers and iframes */
-    [class*="ad-container"],
-    [class*="advertisement"],
-    [class*="ad-wrapper"],
-    [class*="ad-banner"],
-    [class*="ads-"],
-    [class*="ad_"],
-    [id*="ad-container"],
-    [id*="advertisement"],
-    [id*="google_ads"],
-    [id*="ads-"],
-    [id*="ad_"],
-    .ad, .ads, .adsbygoogle,
-    iframe[src*="doubleclick"],
-    iframe[src*="googlesyndication"],
-    iframe[src*="googleadservices"],
-    iframe[src*="advertising"],
-    iframe[src*="exoclick"],
-    iframe[src*="popcash"],
-    iframe[src*="popads"] {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      height: 0 !important;
-      width: 0 !important;
-      position: absolute !important;
-      left: -9999px !important;
-      top: -9999px !important;
-      pointer-events: none !important;
-      z-index: -1 !important;
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+      20%, 40%, 60%, 80% { transform: translateX(4px); }
+    }
+    .animate-shake {
+      animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
     }
 
-    /* Block overlay ads and popups */
-    div[style*="position: fixed"][style*="z-index: 9999"],
-    div[style*="position: fixed"][style*="z-index: 999999"],
-    div[style*="position: absolute"][style*="z-index: 9999"],
-    [class*="popup-"],
-    [class*="modal-"][class*="ad"],
-    [id*="popup-"],
-    [id*="overlay-ad"] {
-      display: none !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
 
-    /* Restore body scroll when ads try to lock it */
-    body.noscroll,
-    body.modal-open,
-    body.locked,
-    html.noscroll,
-    html.locked {
-      overflow: auto !important;
-      position: static !important;
+    /* Professional Glassmorphism */
+    .glass {
+      background: rgba(24, 24, 27, 0.6);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    /* Block banner ads */
-    [class*="banner"],
-    [id*="banner"],
-    div[style*="width: 728px"][style*="height: 90px"],
-    div[style*="width: 300px"][style*="height: 250px"] {
-      display: none !important;
-    }
+    /* Transitions */
+    .fade-enter { opacity: 0; }
+    .fade-enter-active { opacity: 1; transition: opacity 300ms ease-in; }
 
-    /* Hide ad placeholder text */
-    *:has(> *[class*="ad-"]):empty,
-    *:has(> *[id*="ad-"]):empty {
-      display: none !important;
-    }
   </style>
   <script type="importmap">
 {

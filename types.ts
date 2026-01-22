@@ -52,13 +52,20 @@ export interface AnimeDetail {
   download: DownloadCategory[];
 }
 
+// ========================================
+// ViewState Enum (Updated)
+// Added TERMS to support policy navigation
+// ========================================
 export enum ViewState {
   AUTH = 'AUTH',
   HOME = 'HOME',
   SEARCH = 'SEARCH',
   DETAIL = 'DETAIL',
+  BOOKMARKS = 'BOOKMARKS',
+  HISTORY = 'HISTORY',
   PRIVACY = 'PRIVACY',
   DMCA = 'DMCA',
   CONTACT = 'CONTACT',
-  FAQ = 'FAQ'
+  FAQ = 'FAQ',
+  TERMS = 'TERMS'
 }

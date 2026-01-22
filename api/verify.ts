@@ -1,4 +1,6 @@
 
+import { Security } from '../utils/security';
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
@@ -7,21 +9,20 @@ export default async function handler(req: any, res: any) {
   const { key } = req.body;
 
   if (!key) {
-    return res.status(400).json({ valid: false, message: 'KEY REQUIRED' });
+    return res.status(400).json({ valid: false, message: 'IDENTITAS DIBUTUHKAN' });
   }
 
-  const keyPattern = /^NK-[A-Z0-9]{6}$/;
-  const isValid = keyPattern.test(key);
+  const result = Security.verifySecureKey(key.toUpperCase());
 
-  if (isValid) {
+  if (result.isValid) {
     return res.status(200).json({ 
       valid: true, 
-      message: 'IDENTITY VERIFIED. ACCESS GRANTED.' 
+      message: 'AKSES DIBERIKAN. NODE TERVERIFIKASI.' 
     });
   }
 
   return res.status(401).json({ 
     valid: false, 
-    message: 'KEY NOT RECOGNIZED BY CENTRAL NODE.' 
+    message: result.reason || 'AKSES DITOLAK' 
   });
 }
