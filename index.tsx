@@ -1,12 +1,25 @@
+// ========================================
+// FILE: index.tsx (UPDATED)
+// Location: Root directory
+// Changes: Added AdBlocker initialization
+// ========================================
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { AdBlocker } from './utils/adBlocker';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
+
+// ========================================
+// Initialize Ad Blocker (Line 15-17)
+// Activate network request interception and CSS injection
+// ========================================
+AdBlocker.initialize();
+AdBlocker.injectCSS();
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
@@ -14,3 +27,13 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Log ad blocker stats every 30 seconds (optional monitoring)
+if (process.env.NODE_ENV === 'development') {
+  setInterval(() => {
+    const stats = AdBlocker.getStats();
+    if (stats.blockedCount > 0) {
+      console.log(`📊 [AdBlocker Stats] Total blocked: ${stats.blockedCount} requests`);
+    }
+  }, 30000);
+}

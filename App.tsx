@@ -1,3 +1,10 @@
+// ========================================
+// FILE: App.tsx (UPDATED)
+// Location: Root directory
+// Changes: 
+// - Line 9: Added AdBlockedIframe import
+// - Line 259: Replaced standard iframe with AdBlockedIframe
+// ========================================
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
@@ -9,6 +16,7 @@ import { ViewState, AnimeLatestItem, AnimeReleaseItem, AnimeSearchItem, AnimeDet
 import { api } from './services/api';
 import { Banner } from './components/Banner';
 import { ContentCard } from './components/ContentCard';
+import { AdBlockedIframe } from './components/AdBlockedIframe'; // LINE 9: ADDED IMPORT
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>(ViewState.AUTH);
@@ -281,8 +289,16 @@ const App: React.FC = () => {
              <button onClick={goBack} className="flex items-center gap-2 text-zinc-500 hover:text-white mb-8 font-black uppercase text-[10px] tracking-widest transition-colors"><ArrowLeft className="w-4 h-4" /> Return to Archive</button>
              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <div className="lg:col-span-8 space-y-8">
+                   {/* ========================================
+                       LINE 259: UPDATED - Using AdBlockedIframe
+                       Replaced standard <iframe> with AdBlockedIframe component
+                       This applies ad-blocking logic automatically
+                       ======================================== */}
                    <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-white/5 shadow-2xl relative group">
-                      <iframe src={activeStream || ''} className="w-full h-full" allowFullScreen frameBorder="0" />
+                      <AdBlockedIframe 
+                        src={activeStream || ''} 
+                        className="w-full h-full"
+                      />
                    </div>
                    <div className="bg-[#0a0a0b] p-6 md:p-10 rounded-3xl border border-white/5 space-y-6">
                       <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter leading-tight border-l-4 border-red-600 pl-4">{selectedAnime.title}</h1>

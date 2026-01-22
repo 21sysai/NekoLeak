@@ -1,9 +1,5 @@
-# NekoLeak - Free access Nekopoi without ads
-
-![NekoLeak Banner](/public/images/banner1.jpg)
-
 <div align="center">
-  <img src="/logo.png" width="120" height="120" alt="NEKOLEAK Logo" style="border-radius: 20%; box-shadow: 0 0 50px rgba(220, 38, 38, 0.4);" />
+  <img src="/public/logo.png" width="120" height="120" alt="NEKOLEAK Logo" style="border-radius: 20%; box-shadow: 0 0 50px rgba(220, 38, 38, 0.4);" />
   <h1 align="center">NEKOLEAK — NEXUS OPS 2026</h1>
   <p align="center">
     <strong>Premium Anime Streaming & Leak Archive System</strong><br />
