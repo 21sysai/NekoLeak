@@ -16,9 +16,6 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        // Menghapus fallback string agar tidak ada API hardcoded sama sekali
         'process.env.BASE_PROXY_URL': JSON.stringify(env.BASE_PROXY_URL)
       },
       resolve: {
