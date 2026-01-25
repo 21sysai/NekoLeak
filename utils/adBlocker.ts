@@ -1,45 +1,42 @@
+// utils/adBlocker.ts
 
+// --- Konfigurasi Pemblokiran Agresif v2026 ---
+
+// Daftar domain yang diperluas
 const AD_DOMAINS = [
-  'doubleclick.net',
-  'googlesyndication.com',
-  'googleadservices.com',
-  'google-analytics.com',
-  'googletagmanager.com',
-  'adnxs.com',
-  'advertising.com',
-  'exoclick.com',
-  'popcash.net',
-  'popads.net',
-  'propellerads.com',
-  'adsterra.com',
-  'clickadu.com',
-  'hilltopads.net',
-  'juicyads.com',
-  'trafficjunky.com',
-  'tubecorporate.com',
+  'doubleclick.net', 'googlesyndication.com', 'googleadservices.com',
+  'google-analytics.com', 'googletagmanager.com', 'adnxs.com', 'advertising.com',
+  'exoclick.com', 'popcash.net', 'popads.net', 'propellerads.com',
+  'adsterra.com', 'clickadu.com', 'hilltopads.net', 'juicyads.com',
+  'trafficjunky.com', 'tubecorporate.com', 'ad-maven.com', 'ero-advertising.com',
+  'trafficforce.com', 'adform.net', 'criteo.com', 'outbrain.com', 'taboola.com'
 ];
 
+// Pola URL yang diperluas
 const AD_PATTERNS = [
-  /\/ads\//i,
-  /\/ad\//i,
-  /\/banner/i,
-  /\/popup/i,
-  /-ad-/i,
-  /-ads-/i,
-  /advertisement/i,
-  /promo\./i,
-  /tracking\./i,
-  /analytic/i,
+  /\/ads?\//i, /\/banner/i, /\/popup/i, /-ad[sx]?-/i, /advertisement/i,
+  /promo\./i, /tracking\./i, /analytic/i, /delivery/i, /syndication/i,
+  /adserver/i, /track\.js/i
 ];
+
+// Selektor CSS untuk injeksi dan pengamatan DOM
+const AD_SELECTORS = [
+  '[class*="ad-container"]', '[class*="advertisement"]', '[class*="ad-wrapper"]',
+  '[class*="ad-banner"]', '[class*="ads-"]', '[id*="ad-container"]',
+  '[id*="advertisement"]', '[id*="google_ads"]', '[id*="ads-"]',
+  '.ad', '.ads', '.adsbygoogle', 'iframe[src*="doubleclick"]',
+  'iframe[src*="googlesyndication"]', 'iframe[src*="advertising"]',
+  'div[style*="z-index: 9999"]', 'div[style*="z-index: 999999"]',
+  '[class*="overlay-ad"]', '[id*="pop-ad"]', '[class*="sticky-ad"]'
+];
+
+// --- Kelas Utama AdBlocker ---
 
 export class AdBlocker {
   private static blockedCount = 0;
   private static initialized = false;
 
-  /**
-   * Check if URL should be blocked
-   */
-  static shouldBlock(url: string): boolean {
+  private static shouldBlock(url: string): boolean {
     if (!url) return false;
     try {
       const urlString = String(url);
@@ -52,136 +49,166 @@ export class AdBlocker {
   }
 
   /**
-   * Initialize ad blocker - intercept network requests safely
+   * Inisialisasi utama untuk semua modul pemblokiran.
    */
   static initialize(): void {
     if (this.initialized) return;
     this.initialized = true;
 
-    // Intercept fetch API using Object.defineProperty to bypass "getter-only" restrictions
+    this.interceptNetworkRequests();
+    this.interceptScriptInjection();
+    this.overrideWindowOpen();
+    this.initializeDOMObserver();
+
+    console.log('🛡️ [AdBlocker v2026] Protokol pertahanan agresif telah diaktifkan.');
+  }
+  
+  /**
+   * Mencegat permintaan jaringan (Fetch & XHR).
+   */
+  private static interceptNetworkRequests(): void {
     try {
       const originalFetch = window.fetch;
-      if (typeof originalFetch === 'function') {
-        Object.defineProperty(window, 'fetch', {
-          configurable: true,
-          enumerable: true,
-          writable: true,
-          value: function(...args: any[]): Promise<Response> {
-            const input = args[0];
-            const url = typeof input === 'string' ? input : (input && (input as Request).url) ? (input as Request).url : '';
-            
-            if (AdBlocker.shouldBlock(url)) {
-              AdBlocker.blockedCount++;
-              console.debug(`🚫 [AdBlocker] Blocked fetch:`, url);
-              return Promise.resolve(new Response('', {
-                status: 200,
-                statusText: 'Blocked by AdBlocker',
-              }));
-            }
-            return originalFetch.apply(this, args);
+      Object.defineProperty(window, 'fetch', {
+        writable: true, configurable: true,
+        value: function(...args: any[]): Promise<Response> {
+          const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url || '';
+          if (AdBlocker.shouldBlock(url)) {
+            AdBlocker.blockedCount++;
+            return Promise.resolve(new Response(null, { status: 204, statusText: 'Blocked by NEKOLEAK Shield' }));
           }
-        });
-      }
-    } catch (e) {
-      console.warn('⚠️ [AdBlocker] Failed to intercept fetch:', e);
-    }
+          return originalFetch.apply(this, args);
+        }
+      });
+    } catch (e) { console.warn('[AdBlocker] Gagal mencegat Fetch:', e); }
 
-    // Intercept XMLHttpRequest safely
     try {
       const originalOpen = XMLHttpRequest.prototype.open;
       XMLHttpRequest.prototype.open = function(method: string, url: string | URL, ...rest: any[]): void {
-        const urlString = url.toString();
-        if (AdBlocker.shouldBlock(urlString)) {
-          AdBlocker.blockedCount++;
-          console.debug(`🚫 [AdBlocker] Blocked XHR:`, urlString);
-          // Set a flag to ignore subsequent calls on this instance
-          (this as any)._blockedByAdBlocker = true;
-          return;
+        if (AdBlocker.shouldBlock(url.toString())) {
+          (this as any)._blocked = true;
+        } else {
+          originalOpen.apply(this, [method, url, ...rest]);
         }
-        return originalOpen.apply(this, [method, url, ...rest]);
       };
-
       const originalSend = XMLHttpRequest.prototype.send;
-      XMLHttpRequest.prototype.send = function(body?: Document | XMLHttpRequestBodyInit | null): void {
-        if ((this as any)._blockedByAdBlocker) {
-          return;
+      XMLHttpRequest.prototype.send = function(...args: any[]): void {
+        if (!(this as any)._blocked) {
+          originalSend.apply(this, args);
+        } else {
+            AdBlocker.blockedCount++;
         }
-        return originalSend.apply(this, [body]);
       };
-    } catch (e) {
-      console.warn('⚠️ [AdBlocker] Failed to intercept XHR:', e);
-    }
+    } catch (e) { console.warn('[AdBlocker] Gagal mencegat XHR:', e); }
+  }
 
-    // Block script injection safely
+  /**
+   * Mencegat pembuatan elemen <script>.
+   */
+  private static interceptScriptInjection(): void {
     try {
-      const originalCreateElement = document.createElement;
-      document.createElement = function(tagName: string, ...args: any[]): any {
-        const element = originalCreateElement.apply(document, [tagName, ...args]);
-        
+      const originalCreate = document.createElement;
+      document.createElement = function(tagName: string, ...options: any[]): HTMLElement {
+        const element = originalCreate.call(this, tagName, ...options);
         if (tagName.toLowerCase() === 'script') {
-          const originalSetAttribute = element.setAttribute;
-          element.setAttribute = function(name: string, value: string) {
-            if (name === 'src' && AdBlocker.shouldBlock(value)) {
-              AdBlocker.blockedCount++;
-              console.debug(`🚫 [AdBlocker] Blocked script injection:`, value);
-              return;
-            }
-            return originalSetAttribute.apply(this, [name, value]);
-          };
-          
-          // Also catch direct .src assignment
           Object.defineProperty(element, 'src', {
-            set: function(value: string) {
+            set: (value: string) => {
               if (AdBlocker.shouldBlock(value)) {
                 AdBlocker.blockedCount++;
-                console.debug(`🚫 [AdBlocker] Blocked script .src:`, value);
-                return;
+              } else {
+                element.setAttribute('src', value);
               }
-              this.setAttribute('src', value);
             },
             configurable: true
           });
         }
         return element;
       };
-    } catch (e) {
-      console.warn('⚠️ [AdBlocker] Failed to intercept createElement:', e);
-    }
+    } catch (e) { console.warn('[AdBlocker] Gagal mencegat createElement:', e); }
+  }
 
-    console.log('🛡️ [AdBlocker] Initialization attempt finished');
+  /**
+   * Mengganti window.open untuk memblokir pop-up/pop-under.
+   */
+  private static overrideWindowOpen(): void {
+    try {
+      const originalOpen = window.open;
+      window.open = function(...args: any[]): Window | null {
+        const url = args[0] || '';
+        // Logika pemblokiran yang lebih longgar untuk memungkinkan fungsionalitas pemutar
+        if (url && AdBlocker.shouldBlock(url.toString())) {
+          console.log('🚫 [AdBlocker] Pop-up diblokir:', url);
+          AdBlocker.blockedCount++;
+          return null;
+        }
+        return originalOpen.apply(this, args);
+      };
+    } catch (e) { console.warn('[AdBlocker] Gagal menimpa window.open:', e); }
+  }
+
+  /**
+   * Menginisialisasi MutationObserver untuk secara proaktif menghapus elemen iklan
+   * yang ditambahkan ke DOM secara dinamis.
+   */
+  private static initializeDOMObserver(): void {
+    try {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) { // Hanya elemen
+              const element = node as HTMLElement;
+              const adSelectors = AD_SELECTORS.join(',');
+              
+              // Cek elemen itu sendiri dan turunannya
+              const elementsToCheck = [element, ...Array.from(element.querySelectorAll(adSelectors))];
+
+              elementsToCheck.forEach(el => {
+                if (el instanceof HTMLElement && el.matches(adSelectors)) {
+                  console.log('🚫 [AdBlocker] Elemen iklan dinamis dihapus:', el.tagName, el.id, el.className);
+                  el.style.setProperty('display', 'none', 'important');
+                  el.style.setProperty('visibility', 'hidden', 'important');
+                  el.remove();
+                  AdBlocker.blockedCount++;
+                }
+              });
+            }
+          });
+        });
+      });
+
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+    } catch (e) { console.warn('[AdBlocker] Gagal menginisialisasi DOM Observer:', e); }
   }
 
   static getStats(): { blockedCount: number } {
     return { blockedCount: AdBlocker.blockedCount };
   }
 
+  /**
+   * Menyuntikkan CSS untuk menyembunyikan elemen iklan sebelum skrip berjalan.
+   */
   static injectCSS(): void {
     try {
       if (document.getElementById('adblocker-css')) return;
       const style = document.createElement('style');
       style.id = 'adblocker-css';
       style.textContent = `
-        [class*="ad-container"], [class*="advertisement"], [class*="ad-wrapper"],
-        [class*="ad-banner"], [class*="ads-"], [id*="ad-container"],
-        [id*="advertisement"], [id*="google_ads"], [id*="ads-"],
-        .ad, .ads, .adsbygoogle, iframe[src*="doubleclick"],
-        iframe[src*="googlesyndication"], iframe[src*="advertising"] {
+        ${AD_SELECTORS.join(',\n')} {
           display: none !important;
           visibility: hidden !important;
           pointer-events: none !important;
-          height: 0 !important;
           width: 0 !important;
-        }
-        div[style*="z-index: 9999"], div[style*="z-index: 999999"] {
-          display: none !important;
+          height: 0 !important;
+          opacity: 0 !important;
         }
         body.noscroll, body.modal-open, html.noscroll {
           overflow: auto !important;
         }
       `;
       document.head.appendChild(style);
-    } catch (e) {
-      console.warn('⚠️ [AdBlocker] Failed to inject CSS:', e);
-    }
+    } catch (e) { console.warn('[AdBlocker] Gagal menyuntikkan CSS:', e); }
   }
 }
